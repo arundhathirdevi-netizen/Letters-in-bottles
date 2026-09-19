@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #f7f4ed;
+    background-color: #12100e;
+    overflow-x: hidden;
+  }
+}
+
+.font-serif-vintage {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.font-display-vintage {
+  font-family: 'Italiana', 'Cormorant Garamond', serif;
+}
+
+.font-handwriting {
+  font-family: 'Caveat', cursive;
+}
+
+/* Vintage Perforated Postage Stamp Edge */
+.stamp-border {
+  position: relative;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  background-color: #fffaf0;
+  padding: 6px;
+  border-radius: 2px;
+}
+
+.stamp-serrated {
+  background: radial-gradient(transparent 0px, transparent 2px, #fffaf2 2px, #fffaf2);
+  background-size: 8px 8px;
+}
+
+/* Authentic Polaroid Frame */
+.polaroid-frame {
+  background: #fbf9f4;
+  padding: 12px 12px 34px 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.polaroid-frame:hover {
+  transform: rotate(0deg) scale(1.02);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+}
+
+/* Vintage Parchment Texture & Paper Feel */
+.parchment-paper {
+  background-color: #fbf7ee;
+  background-image: 
+    radial-gradient(#eedfc5 0.75px, transparent 0.75px),
+    radial-gradient(#f1e6d0 0.75px, #fbf7ee 0.75px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+  box-shadow: 
+    0 1px 3px rgba(0,0,0,0.06),
+    0 12px 28px rgba(28,22,17,0.18),
+    0 2px 8px rgba(0,0,0,0.08);
+}
+
+.parchment-lines {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    rgba(215, 198, 175, 0.35) 31px,
+    rgba(215, 198, 175, 0.35) 32px
+  );
+  line-height: 32px;
+}
+
+/* Subtle Film Grain Texture Overlay */
+.film-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* Smooth custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(230, 210, 185, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(230, 210, 185, 0.55);
+}
+

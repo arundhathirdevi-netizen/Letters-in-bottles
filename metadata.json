@@ -1,0 +1,6 @@
+{
+  "name": "Letters in Bottles",
+  "description": "A minimalist, deeply aesthetic fairytale-inspired digital ocean where letters drift across analog waves.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
