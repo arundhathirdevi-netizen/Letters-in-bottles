@@ -1,13 +1,9 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import nodemailer from 'nodemailer';
 import { Letter } from './src/types';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const CREATOR_GPAY_PHONE = '+91 99471 17171';
 const CREATOR_GPAY_ACCOUNT = '+91 99471 17171 (Google Pay)';
@@ -19,7 +15,7 @@ async function startServer() {
 
   app.use(express.json({ limit: '5mb' }));
 
-  const dataDir = path.join(__dirname, 'data');
+  const dataDir = path.join(process.cwd(), 'data');
   const collectionFilePath = path.join(dataDir, 'letters_collection.json');
 
   if (!fs.existsSync(dataDir)) {
