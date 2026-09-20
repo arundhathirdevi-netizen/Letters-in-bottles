@@ -13,7 +13,9 @@ export interface Letter {
   title?: string;
   content: string;
   senderName?: string;
+  senderEmail?: string;
   recipientName?: string;
+  recipientEmail?: string;
   stampId: string;
   date: string;
   location?: string;
@@ -23,4 +25,17 @@ export interface Letter {
   fontStyle?: 'cursive' | 'serif' | 'typewriter';
   paperTexture?: 'cream' | 'pink' | 'peach' | 'mint';
   likesCount?: number;
+  authorType?: 'human' | 'ai';
+  isRealUser?: boolean;
+  paymentAmount?: number;
+  paymentRecipient?: string;
+  utrNumber?: string;
+  authorToken?: string;
+}
+
+export interface AuthoredLetterRecord {
+  id: string;
+  deleteToken: string;
+  title: string;
+  date: string;
 }

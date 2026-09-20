@@ -1,16 +1,13 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Feather, Heart, Sparkles, Clock, Compass, BookOpen, Quote } from 'lucide-react';
+import { Heart, Sparkles, Clock, Compass, Quote, Mail, Send } from 'lucide-react';
 
 interface BeautyOfLettersProps {
-  onOpenWrite: () => void;
-  onOpenRead: () => void;
+  onOpenWrite?: () => void;
+  onOpenRead?: () => void;
 }
 
-export const BeautyOfLetters: React.FC<BeautyOfLettersProps> = ({
-  onOpenWrite,
-  onOpenRead,
-}) => {
+export const BeautyOfLetters: React.FC<BeautyOfLettersProps> = () => {
   const beautyPillars = [
     {
       icon: Clock,
@@ -121,57 +118,76 @@ export const BeautyOfLetters: React.FC<BeautyOfLettersProps> = ({
           })}
         </div>
 
-        {/* Vintage Parchment Quote & Call to Action Banner */}
+        {/* Vintage Parchment Quote Banner (without buttons) */}
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-lg p-8 sm:p-12 parchment-paper bg-[#fbf7ee] text-[#2c221a] shadow-2xl border border-[#d9c5af] flex flex-col md:flex-row items-center justify-between gap-8"
+          className="relative rounded-lg p-8 sm:p-12 parchment-paper bg-[#fbf7ee] text-[#2c221a] shadow-2xl border border-[#d9c5af] text-center max-w-3xl mx-auto"
         >
           {/* Subtle vintage wax seal in corner */}
           <div className="absolute -top-4 -right-2 hidden sm:flex w-12 h-12 rounded-full bg-[#962d3e] text-[#ffd5df] shadow-md border border-white/30 items-center justify-center text-sm rotate-12">
             ♥
           </div>
 
-          <div className="max-w-xl text-left">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#8a5340] mb-2 font-mono">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-[#8a5340] mb-3 font-mono">
               <Quote className="w-3.5 h-3.5" />
               <span>A note on human connection</span>
             </div>
 
-            <p className="font-handwriting text-2xl sm:text-3xl text-[#36271e] leading-snug">
+            <p className="font-handwriting text-2xl sm:text-3xl md:text-4xl text-[#36271e] leading-snug">
               &ldquo;More than kisses, letters mingle souls; for thus friends absent speak.&rdquo;
             </p>
 
-            <div className="text-xs uppercase tracking-widest text-[#786150] mt-2">
+            <div className="text-xs uppercase tracking-widest text-[#786150] mt-3 font-medium">
               — John Donne, 1597
             </div>
 
-            <p className="text-xs sm:text-sm text-[#5f493b] mt-3 leading-relaxed font-light">
+            <p className="text-xs sm:text-sm text-[#5f493b] mt-4 leading-relaxed font-light">
               Every word you write here floats into the worldwide digital ocean, waiting for someone to find it on their shore.
             </p>
           </div>
+        </motion.div>
 
-          {/* Action buttons on the quote banner */}
-          <div className="flex flex-col sm:flex-row md:flex-col gap-3 w-full md:w-auto shrink-0">
-            <button
-              id="beauty-cast-letter-btn"
-              onClick={onOpenWrite}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[#2c221a] hover:bg-[#3d3025] text-[#faf6ed] font-medium text-sm tracking-wide shadow-md hover:shadow-lg transition cursor-pointer whitespace-nowrap"
-            >
-              <Feather className="w-4 h-4 text-[#fedac5]" />
-              <span>Cast Your Letter</span>
-            </button>
+        {/* Creator Feedback & Suggestions Box */}
+        <motion.div
+          id="creator-feedback-box"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="mt-12 max-w-xl mx-auto rounded-xl p-6 sm:p-7 bg-[#1c1613] border border-[#403127] text-center shadow-lg relative overflow-hidden"
+        >
+          <div className="w-10 h-10 rounded-full bg-[#fedac5]/10 border border-[#fedac5]/30 flex items-center justify-center text-[#fedac5] mx-auto mb-3.5">
+            <Mail className="w-4 h-4 text-[#fedac5]" />
+          </div>
 
-            <button
-              id="beauty-read-letter-btn"
-              onClick={onOpenRead}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-transparent hover:bg-black/5 text-[#4a3628] border border-[#a8907b] text-sm tracking-wide transition cursor-pointer whitespace-nowrap"
-            >
-              <BookOpen className="w-4 h-4 text-[#8a5340]" />
-              <span>Discover Drifting Letters</span>
-            </button>
+          <h4 className="font-serif-vintage text-lg sm:text-xl text-[#faf6ed] tracking-wide">
+            Feedback &amp; Suggestions
+          </h4>
+
+          <p className="text-xs sm:text-sm text-[#bcaaa0] mt-1.5 leading-relaxed font-light max-w-md mx-auto">
+            Have thoughts, reflections, or suggestions for Letters in Bottles? We&apos;d love to hear from you.
+          </p>
+
+          <div className="mt-4 p-3 rounded-lg bg-[#140f0d] border border-[#32261e] flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-[#fedac5] font-mono select-all">
+              <span>✉️</span>
+              <span className="font-medium">arundhathi.r.devi@gmail.com</span>
+            </div>
+
+            <div className="w-full sm:w-auto">
+              <a
+                id="send-feedback-email-link"
+                href="mailto:arundhathi.r.devi@gmail.com?subject=Feedback%20%26%20Suggestions%20for%20Letters%20in%20Bottles"
+                className="w-full sm:w-auto px-4 py-1.5 rounded-full text-xs font-medium text-[#1c1613] bg-[#fedac5] hover:bg-[#ffe5d6] transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+              >
+                <span>Send Feedback</span>
+                <Send className="w-3 h-3" />
+              </a>
+            </div>
           </div>
         </motion.div>
       </div>

@@ -118,7 +118,7 @@ export const SpecialLetterViewer: React.FC<SpecialLetterViewerProps> = ({
                     Deliver To:
                   </div>
                   <div className={`font-handwriting text-3xl sm:text-4xl ${envelopeColors.text} mt-1 font-semibold`}>
-                    {letter.recipientName || 'My Dearest'}
+                    {letter.recipientName || 'Beloved'}
                   </div>
                   <div className="text-[11px] text-[#715243] tracking-wide mt-1">
                     Via Digital Ocean Bottle Post

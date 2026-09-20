@@ -77,7 +77,9 @@ export const GratitudeScreen: React.FC<GratitudeScreenProps> = ({
           className="text-base sm:text-lg text-[#d8cbbf] font-light max-w-xl leading-relaxed mb-8"
         >
           {sentLetter.isSpecial
-            ? `Your letter for ${sentLetter.recipientName || 'your special someone'} has been sealed in an enchanted bottle with a custom wax seal. Share your dedicated secret link below!`
+            ? sentLetter.recipientEmail
+              ? `Your letter has been prepared for ${sentLetter.recipientName || 'your loved one'} and dispatched to their email mailbox at ${sentLetter.recipientEmail}!`
+              : `Your letter for ${sentLetter.recipientName || 'your special someone'} has been sealed in an enchanted bottle with a custom wax seal.`
             : 'Your words are now floating across the hands of random readers. May they bring warmth to whoever finds them. 🌊🕯️'}
         </motion.p>
 
@@ -89,15 +91,17 @@ export const GratitudeScreen: React.FC<GratitudeScreenProps> = ({
             transition={{ delay: 0.55, duration: 0.6 }}
             className="w-full bg-[#1e1716]/90 border border-[#4d3638] rounded-xl p-5 mb-8 text-left shadow-2xl backdrop-blur-md"
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <span className="text-xs uppercase tracking-wider text-[#ffd5df] font-medium flex items-center gap-1.5">
                 <Heart className="w-3.5 h-3.5 text-[#ffd5df]" />
                 Dedicated Secret Link for {sentLetter.recipientName}
               </span>
-              <span className="text-[11px] text-[#c5ebd4] flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                Custom Envelope Ready
-              </span>
+              {sentLetter.recipientEmail && (
+                <span className="text-[11px] text-[#c5ebd4] flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Mailbox: {sentLetter.recipientEmail}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2 mt-2 bg-[#120e0d] p-2.5 rounded-lg border border-[#3e2c2e]">
@@ -127,18 +131,52 @@ export const GratitudeScreen: React.FC<GratitudeScreenProps> = ({
               </button>
             </div>
 
-            {onViewSpecialLetter && (
-              <div className="mt-3 flex justify-end">
+            {/* Email Direct Sending and Payment Confirmation */}
+            <div className="mt-3.5 pt-3 border-t border-[#3e2c2e] flex flex-wrap items-center justify-between gap-2 text-xs">
+              {sentLetter.recipientEmail && (
+                <a
+                  id="open-mail-client-btn"
+                  href={`mailto:${encodeURIComponent(sentLetter.recipientEmail)}?subject=${encodeURIComponent(
+                    `💌 A sealed letter for you from ${sentLetter.senderName || 'Someone who loves you'}`
+                  )}&body=${encodeURIComponent(
+                    `Dear ${sentLetter.recipientName || 'Beloved'},\n\nI sealed a personal letter in a digital bottle for you:\n\n"${sentLetter.content}"\n\n---\nOpen and uncork your private envelope online:\n${secretLinkUrl}\n\nWith love,\n${sentLetter.senderName || 'Someone special'}`
+                  )}`}
+                  className="px-3 py-1.5 rounded-md bg-[#2d1f22] hover:bg-[#3d292d] text-[#ffd5df] border border-[#5a3a40] flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>Open in Mail App ✉️</span>
+                </a>
+              )}
+
+              {onViewSpecialLetter && (
                 <button
                   id="preview-special-letter-btn"
                   onClick={() => onViewSpecialLetter(sentLetter)}
-                  className="text-xs text-[#fedac5] hover:text-white flex items-center gap-1 transition cursor-pointer"
+                  className="text-xs text-[#fedac5] hover:text-white flex items-center gap-1 transition cursor-pointer ml-auto"
                 >
                   <ExternalLink className="w-3 h-3" />
                   <span>Preview Sealed Envelope Animation</span>
                 </button>
+              )}
+            </div>
+
+            {/* Account receiving verification badge */}
+            <div className="mt-2.5 text-[11px] text-[#baa494] flex flex-wrap items-center justify-between gap-1 bg-[#171210] px-3 py-2 rounded border border-[#3e2c2e]">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[#ffd5df] font-medium">Letters on Bottles UPI:</span>
+                <span className="font-mono text-[#c5ebd4] font-semibold">
+                  {sentLetter.utrNumber ? `UTR: ${sentLetter.utrNumber}` : 'Payment Verified'}
+                </span>
               </div>
-            )}
+              <span className="text-[#8f797a]">({sentLetter.paymentAmount === 2 ? '₹160 / $2.00' : '₹80 / $1.00'} delivery tier)</span>
+            </div>
+
+            {/* Strict Privacy Badge */}
+            <div className="mt-2.5 text-[11px] text-[#e8d8d3] bg-[#1a1315] px-3 py-2 rounded border border-[#482d34] flex items-start gap-2">
+              <span className="text-sm leading-none">🔒</span>
+              <span className="leading-relaxed">
+                <strong className="text-[#ffd5df]">Strictly Private Delivery:</strong> This letter is delivered directly to <span className="font-mono text-[#c5ebd4] font-medium">{sentLetter.recipientEmail}</span> and will <span className="text-[#ffd5df] font-semibold underline decoration-[#ffd5df]/40">never</span> be available in the public ocean or seen by anyone else.
+              </span>
+            </div>
           </motion.div>
         )}
 

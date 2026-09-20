@@ -9,10 +9,12 @@ import { ReadSection } from './components/ReadSection';
 import { SpecialLetterViewer } from './components/SpecialLetterViewer';
 import { EnvelopeCard } from './components/EnvelopeCard';
 import { BeautyOfLetters } from './components/BeautyOfLetters';
+import { MyLettersModal } from './components/MyLettersModal';
 import { INITIAL_LETTERS } from './data/initialLetters';
 import { Letter } from './types';
 import { STAMPS } from './data/stamps';
 import { sounds } from './utils/sound';
+import { fetchLettersCollection, saveLetterToCollection, sendLetterToLovedOneApi, getMyAuthoredLetters, purgeTrialLetters, fetchPrivateLetter } from './utils/lettersApi';
 import { Waves, Heart, Feather, Sparkles, BookOpen } from 'lucide-react';
 
 const STORAGE_KEY = 'letters_in_bottles_ocean_v1';
@@ -23,20 +25,31 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+        if (Array.isArray(parsed)) {
+          // Strictly show human letters and purge trial dearest test letters
+          const humanLetters = parsed.filter((l: Letter) => {
+            const isSeedOrAi = l.id?.startsWith('bottle-seed') || l.authorType === 'ai';
+            const isTrialDearest =
+              l.recipientName?.toLowerCase().includes('dearest') ||
+              l.title?.toLowerCase().includes('dearest') ||
+              l.content?.toLowerCase().includes('dearest') ||
+              l.id?.includes('trial');
+            return !isSeedOrAi && !isTrialDearest;
+          });
+          if (humanLetters.length > 0) return humanLetters;
         }
       }
     } catch {
       // ignore
     }
-    return INITIAL_LETTERS;
+    return [];
   });
 
   const [activeModal, setActiveModal] = useState<
-    'none' | 'write' | 'send-options' | 'gratitude' | 'read' | 'special-view'
+    'none' | 'write' | 'send-options' | 'gratitude' | 'read' | 'special-view' | 'my-letters'
   >('none');
   const [readInitialIndex, setReadInitialIndex] = useState<number>(0);
+  const [authoredCount, setAuthoredCount] = useState<number>(() => getMyAuthoredLetters().length);
   const [currentDraft, setCurrentDraft] = useState<Partial<Letter>>({});
   const [lastSentLetter, setLastSentLetter] = useState<Letter | null>(null);
   const [secretLinkUrl, setSecretLinkUrl] = useState<string>('');
@@ -52,6 +65,54 @@ export default function App() {
     }
   }, [letters]);
 
+  // Fetch letters from the server collection so letters written by all random visitors appear
+  useEffect(() => {
+    let isMounted = true;
+    async function loadOceanCollection() {
+      // Purge any trial dearest letters permanently on load
+      await purgeTrialLetters();
+      if (isMounted) {
+        setAuthoredCount(getMyAuthoredLetters().length);
+      }
+
+      const serverLetters = await fetchLettersCollection();
+      if (isMounted && serverLetters) {
+        // Strictly filter to ensure no AI letters and no trial dearest letters are shown
+        const humanLetters = serverLetters.filter((l) => {
+          const isSeedOrAi = l.id.startsWith('bottle-seed') || l.authorType === 'ai';
+          const isDearestTrial =
+            l.recipientName?.toLowerCase().includes('dearest') ||
+            l.title?.toLowerCase().includes('dearest') ||
+            l.content?.toLowerCase().includes('dearest') ||
+            l.id?.includes('trial');
+          return !isSeedOrAi && !isDearestTrial;
+        });
+
+        setLetters((localLetters) => {
+          const combined = [...humanLetters];
+          for (const local of localLetters) {
+            if (!combined.some((l) => l.id === local.id)) {
+              const isSeedOrAi = local.id.startsWith('bottle-seed') || local.authorType === 'ai';
+              const isDearestTrial =
+                local.recipientName?.toLowerCase().includes('dearest') ||
+                local.title?.toLowerCase().includes('dearest') ||
+                local.content?.toLowerCase().includes('dearest') ||
+                local.id?.includes('trial');
+              if (!isSeedOrAi && !isDearestTrial) {
+                combined.unshift(local);
+              }
+            }
+          }
+          return combined;
+        });
+      }
+    }
+    loadOceanCollection();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Check URL params for dedicated secret links (Option B: ?bottle=...)
   useEffect(() => {
     try {
@@ -61,6 +122,15 @@ export default function App() {
         // Find existing or decode if encoded in query
         const found = letters.find((l) => l.id === bottleId);
         if (found) {
+          const isDearestTrial =
+            found.recipientName?.toLowerCase().includes('dearest') ||
+            found.title?.toLowerCase().includes('dearest') ||
+            found.content?.toLowerCase().includes('dearest') ||
+            found.id?.includes('trial');
+          if (isDearestTrial) {
+            window.history.replaceState({}, '', window.location.pathname);
+            return;
+          }
           setSpecialViewingLetter(found);
           setActiveModal('special-view');
         } else {
@@ -68,11 +138,35 @@ export default function App() {
           if (encoded) {
             try {
               const decodedLetter = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+              const isDearestTrial =
+                decodedLetter?.recipientName?.toLowerCase().includes('dearest') ||
+                decodedLetter?.title?.toLowerCase().includes('dearest') ||
+                decodedLetter?.content?.toLowerCase().includes('dearest') ||
+                decodedLetter?.id?.includes('trial');
+              if (isDearestTrial) {
+                window.history.replaceState({}, '', window.location.pathname);
+                return;
+              }
               setSpecialViewingLetter(decodedLetter);
               setActiveModal('special-view');
             } catch {
               // fallback
             }
+          } else {
+            // Load private sealed letter directly from server archive for loved one
+            fetchPrivateLetter(bottleId).then((privateLetter) => {
+              if (privateLetter) {
+                const isDearestTrial =
+                  privateLetter.recipientName?.toLowerCase().includes('dearest') ||
+                  privateLetter.title?.toLowerCase().includes('dearest') ||
+                  privateLetter.content?.toLowerCase().includes('dearest') ||
+                  privateLetter.id?.includes('trial');
+                if (!isDearestTrial) {
+                  setSpecialViewingLetter(privateLetter);
+                  setActiveModal('special-view');
+                }
+              }
+            });
           }
         }
       }
@@ -93,7 +187,18 @@ export default function App() {
     setActiveModal('write');
   };
 
-  const handleOpenRead = (index = 0) => {
+  // Show a random letter whenever people select "Read a letter"
+  const handleOpenRandomRead = () => {
+    sounds.playOceanWave();
+    if (letters.length > 0) {
+      const randomIndex = Math.floor(Math.random() * letters.length);
+      setReadInitialIndex(randomIndex);
+    }
+    setActiveModal('read');
+  };
+
+  // Show specific letter (e.g. when selecting a specific envelope card)
+  const handleOpenReadByIndex = (index: number) => {
     sounds.playOceanWave();
     setReadInitialIndex(index);
     setActiveModal('read');
@@ -104,15 +209,19 @@ export default function App() {
     setActiveModal('send-options');
   };
 
+  // Save the letter written by people into the ocean collection
   const handleCastToOcean = (newLetter: Letter) => {
     setLetters((prev) => [newLetter, ...prev]);
     setLastSentLetter(newLetter);
     setSecretLinkUrl('');
     setActiveModal('gratitude');
+    // Persist to server collection
+    saveLetterToCollection(newLetter);
+    setAuthoredCount(getMyAuthoredLetters().length + 1);
   };
 
-  const handleSendToSpecialSomeone = (newLetter: Letter) => {
-    setLetters((prev) => [newLetter, ...prev]);
+  const handleSendToSpecialSomeone = async (newLetter: Letter, paymentTier: number) => {
+    // Letters sent to loved ones are strictly private and NEVER added to the public ocean collection
     setLastSentLetter(newLetter);
 
     // Generate dedicated secret link with encoded payload for loved ones
@@ -123,6 +232,27 @@ export default function App() {
 
     setSecretLinkUrl(fullSecretLink);
     setActiveModal('gratitude');
+
+    // Dispatch directly to loved one's email address & record payment
+    const sendResult = await sendLetterToLovedOneApi(newLetter, fullSecretLink, paymentTier);
+    setAuthoredCount(getMyAuthoredLetters().length + 1);
+
+    // If direct mailto link is returned, trigger it so email is dispatched directly
+    if (sendResult?.mailtoUrl) {
+      try {
+        const mailWin = window.open(sendResult.mailtoUrl, '_blank');
+        if (!mailWin) {
+          window.location.href = sendResult.mailtoUrl;
+        }
+      } catch {
+        // popup fallback safe
+      }
+    }
+  };
+
+  const handleLetterDeleted = (letterId: string) => {
+    setLetters((prev) => prev.filter((l) => l.id !== letterId));
+    setAuthoredCount(getMyAuthoredLetters().length);
   };
 
   const handleReplyToLetter = (inReplyTo: Letter) => {
@@ -141,25 +271,21 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar
         onOpenWrite={handleOpenWrite}
-        onOpenRead={handleOpenRead}
+        onOpenRead={handleOpenRandomRead}
+        onOpenMyLetters={() => setActiveModal('my-letters')}
         onScrollToHero={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
         bottlesCount={letters.length}
+        myLettersCount={authoredCount}
       />
 
       {/* Hero Section matching screenshot */}
       <main className="flex-1">
         <Hero
           onOpenWrite={handleOpenWrite}
-          onOpenRead={handleOpenRead}
+          onOpenRead={handleOpenRandomRead}
           bottlesCount={letters.length}
-        />
-
-        {/* 2nd Page / Chapter: The Quiet Beauty of Writing Letters */}
-        <BeautyOfLetters
-          onOpenWrite={handleOpenWrite}
-          onOpenRead={() => handleOpenRead(0)}
         />
 
         {/* Digital Ocean Drifting Letters Carousel / Preview Section */}
@@ -173,57 +299,60 @@ export default function App() {
                 Bottles currently washing ashore
               </h2>
               <p className="text-xs sm:text-sm text-[#bcaaa0] mt-1 font-light">
-                Each letter is sealed inside a vintage envelope. Click any envelope to uncork and read.
+                Each letter is sealed inside a vintage envelope. Click any envelope to uncork, or draw a random bottle.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
               <button
                 id="ocean-read-all-btn"
-                onClick={() => handleOpenRead(0)}
+                onClick={handleOpenRandomRead}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs text-[#e5d8cb] hover:text-white bg-[#221a16] border border-[#3f3229] hover:border-[#fedac5]/40 transition cursor-pointer"
               >
                 <BookOpen className="w-3.5 h-3.5 text-[#ffd5df]" />
-                <span>Open Reader View</span>
+                <span>Draw Random Letter</span>
               </button>
             </div>
           </div>
 
           {/* Envelopes Grid - strictly shows sealed envelopes without revealing words */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {letters.slice(0, 3).map((letter, idx) => (
-              <EnvelopeCard
-                key={letter.id}
-                letter={letter}
-                index={idx}
-                onClick={() => handleOpenRead(idx)}
-              />
-            ))}
-          </div>
-
-          {/* Fairytale Ocean Bottom Bar */}
-          <div className="mt-12 p-8 rounded-lg bg-[#191412] border border-[#322721] text-center flex flex-col items-center">
-            <div className="w-10 h-10 rounded-full bg-[#c5ebd4]/10 border border-[#c5ebd4]/20 flex items-center justify-center text-[#c5ebd4] mb-3">
-              <Waves className="w-5 h-5" />
-            </div>
-            <h3 className="font-serif-vintage text-xl sm:text-2xl text-[#faf6ed]">
-              Every letter is an act of gentle courage.
-            </h3>
-            <p className="text-xs sm:text-sm text-[#b19f90] max-w-lg mt-2 leading-relaxed font-light">
-              Cast your words into the digital tide for free, or seal an enchanted custom envelope with a secret link for someone special.
-            </p>
-            <div className="flex items-center gap-4 mt-5">
+          {letters.length === 0 ? (
+            <div className="p-8 sm:p-12 rounded-lg bg-[#181311] border border-[#382b24] text-center flex flex-col items-center">
+              <div className="w-12 h-12 rounded-full bg-[#fedac5]/10 border border-[#fedac5]/20 flex items-center justify-center text-[#fedac5] mb-4 text-xl">
+                🌊
+              </div>
+              <h3 className="font-serif-vintage text-xl sm:text-2xl text-[#faf6ed]">
+                The ocean is quiet and waiting for real human hearts
+              </h3>
+              <p className="text-xs sm:text-sm text-[#b19f90] max-w-md mt-2 leading-relaxed font-light">
+                No AI letters drift in this sea. We only display letters written by real people.
+                Be the first someone to cast a handwritten letter into the waters.
+              </p>
               <button
-                id="footer-cast-letter-btn"
+                id="cast-first-ocean-btn"
                 onClick={handleOpenWrite}
-                className="px-6 py-2.5 rounded-full bg-[#f9f4e8] hover:bg-white text-[#221a15] text-xs font-medium tracking-wide flex items-center gap-2 shadow transition cursor-pointer"
+                className="mt-5 px-6 py-2.5 rounded-full bg-[#fedac5] hover:bg-[#ffe4d4] text-[#221a15] text-xs font-medium tracking-wide flex items-center gap-2 shadow transition cursor-pointer"
               >
                 <Feather className="w-3.5 h-3.5" />
-                <span>Cast a Letter 🖋️</span>
+                <span>Cast the First Letter 🖋️</span>
               </button>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {letters.slice(0, 3).map((letter, idx) => (
+                <EnvelopeCard
+                  key={letter.id}
+                  letter={letter}
+                  index={idx}
+                  onClick={() => handleOpenReadByIndex(idx)}
+                />
+              ))}
+            </div>
+          )}
         </section>
+
+        {/* The Quiet Beauty of Writing Letters (Placed at the end) */}
+        <BeautyOfLetters />
       </main>
 
       {/* Footer */}
@@ -285,6 +414,22 @@ export default function App() {
             onClose={() => setActiveModal('none')}
             onReply={handleReplyToLetter}
             onWriteNew={handleOpenWrite}
+            onDeleteLetter={handleLetterDeleted}
+          />
+        )}
+
+        {/* My Authored Letters Manager & Secure Deletion Modal */}
+        {activeModal === 'my-letters' && (
+          <MyLettersModal
+            allLetters={letters}
+            onClose={() => setActiveModal('none')}
+            onViewLetter={(letter) => {
+              const idx = letters.findIndex((l) => l.id === letter.id);
+              setReadInitialIndex(idx >= 0 ? idx : 0);
+              setActiveModal('read');
+            }}
+            onLetterDeleted={handleLetterDeleted}
+            onOpenWrite={handleOpenWrite}
           />
         )}
 

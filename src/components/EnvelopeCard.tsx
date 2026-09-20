@@ -2,7 +2,8 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Letter } from '../types';
 import { STAMPS } from '../data/stamps';
-import { Sparkles, Mail, Heart, Compass } from 'lucide-react';
+import { Sparkles, Mail, Heart, Compass, Feather } from 'lucide-react';
+import { isMyAuthoredLetter } from '../utils/lettersApi';
 
 interface EnvelopeCardProps {
   letter: Letter;
@@ -12,6 +13,7 @@ interface EnvelopeCardProps {
 
 export const EnvelopeCard: React.FC<EnvelopeCardProps> = ({ letter, index, onClick }) => {
   const stamp = STAMPS.find((s) => s.id === letter.stampId) || STAMPS[index % STAMPS.length];
+  const isAuthor = isMyAuthoredLetter(letter.id);
 
   // Palette styling for different pastel envelope tones
   const envelopePalette = {
@@ -107,6 +109,13 @@ export const EnvelopeCard: React.FC<EnvelopeCardProps> = ({ letter, index, onCli
             <span>•</span>
             <span>Ocean Tide</span>
           </div>
+
+          {isAuthor && (
+            <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-[#fce4ec] text-[#9c2748] border border-[#f8bbd0] w-fit shadow-xs">
+              <Feather className="w-2.5 h-2.5" />
+              <span>Written by you</span>
+            </span>
+          )}
         </div>
 
         {/* Real Vintage Postage Stamp with cancellation postmark lines */}
